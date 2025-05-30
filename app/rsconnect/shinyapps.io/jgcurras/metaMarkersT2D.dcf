@@ -1,0 +1,12 @@
+name: metaMarkersT2D
+title: metaMarkersT2D
+username: jgcurras
+account: jgcurras
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14852818
+bundleId: 10368122
+url: https://jgcurras.shinyapps.io/metaMarkersT2D/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
