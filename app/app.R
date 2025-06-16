@@ -144,13 +144,13 @@ ui <- bslib::page_fluid(
     ),
     ### Article table ####
     nav_panel(h4("Article information"),
-              p("..."),
+              # p("..."),
               shinycustomloader::withLoader(DT::dataTableOutput(outputId = "articleTab"), 
                                             type = 'html', loader = 'dnaspin'),
     ),
     ### Proteomic table ####
     nav_panel(h4("Proteomics information"),
-              p("..."),
+              # p("..."),
               shinycustomloader::withLoader(DT::dataTableOutput(outputId = "proteomicTab"), 
                                             type = 'html', loader = 'dnaspin'),
     )
@@ -161,7 +161,18 @@ ui <- bslib::page_fluid(
     height = '1500px',
     card_header(h2("Protein search results")), 
     card_body(
-      p("Here you can see...."), 
+      p("For each study, the corresponding log2 fold change (logFC) is shown in 
+        the bar plot below. Bars are grouped according to statistical significance
+        and the type of p-value (raw or adjusted). A positive logFC indicates 
+        higher protein abundance in type 2 diabetic patients compared to 
+        normoglycemic controls, whereas a negative logFC indicates higher 
+        abundance in normoglycemic individuals."),
+      p("The “Adjusted p-value (meta-analysis)” column in the output table refers 
+        to the adjusted values used in the meta-analysis performed with the 
+        Amanida R package. Adjusted p-values originally reported by each study 
+        were retained. However, when only raw p-values were available, adjusted 
+        p-values were computed using the Benjamini–Hochberg correction based on 
+        the total number of comparisons (i.e., proteins) in the corresponding study. "),
       # helpText(textOutput("summaryText")),
       fillable = T, fill = T, 
       shinycustomloader::withLoader(uiOutput(outputId = "logFCPlot"), 
@@ -213,13 +224,14 @@ server <- function(input, output) {
                           country = input$countryID)
       ## Filter
       df <- df %>%
-        dplyr::select(ID, Reference, ProteinName:pvalAdj) %>%
+        dplyr::select(ID, Reference, ProteinName:pvalAdjFinal) %>%
         dplyr::arrange(Reference) %>%
         rename(
           `Protein name or gene name` = ProteinName, 
           `Protein description` = ProteinDescription, 
           `P-value` = pval, 
-          `Adjusted p-value` = pvalAdj)
+          `Adjusted p-value` = pvalAdj,
+          `Adjusted p-value (meta-analysis)` = pvalAdjFinal)
       return(df)  
     } else {
       return(NULL)
@@ -247,10 +259,16 @@ server <- function(input, output) {
     }
     inData <- protein %in% data$ProteinID
     if(!inData){
-      return(HTML(paste0("Protein ", protein, " was not matched any entry from the 
-                         studies considered in this metaanalysis. Review the 
-                         protein ID and make sure that is a valid entry from 
-                  UniProtKB.")))
+      return(HTML(paste0(
+        # "<span style='color: darkred; font-weight: bold;'>",
+        "<div class='alert alert-danger' role='alert'>",
+        "Protein ", protein, " was not matched any entry from the 
+        studies considered in this metaanalysis. Review the 
+        protein ID and make sure that is a valid entry from 
+        UniProtKB.",
+        "</div>"
+        # "</span>"
+        )))
       
     }
   })
@@ -321,7 +339,7 @@ server <- function(input, output) {
   })
   
   
-  ## Box 3 - Display article table ####
+  ## Box 3 - Display proteomic table ####
   output$proteomicTab <- DT::renderDataTable({
     dfBasal <- req(dfBasal())
     if(is.null(dfBasal)){
@@ -334,7 +352,7 @@ server <- function(input, output) {
                     Normalization:Tool_FuncitonalAnalysis)
     colnames(dfBasalProteomics) <- c(
       "Reference", "Data acquisition mode", "DIA method", "Comercial house", 
-      "Type of MS", "Instrument model", "Reference library", 
+      "Instrument model", "Reference library", 
       "Identification & Quantification software", "Normalization", "Statistical test", 
       "Adjusted p-values?", "Method of adjustment", "Data imputation?", 
       "Type of imputation", "Functional analysis?", "Tool for functional analysis"
@@ -402,7 +420,7 @@ server <- function(input, output) {
                                  text = paste0("Article: ", Reference, "\n",
                                                "logFC: ", round(logFC, 2), "\n", 
                                                "Interpretation: ", Significance))) +
-      geom_bar(stat = "identity") +
+      geom_bar(stat = "identity", width = 0.5) +
       labs(x = "", y = "logFC", fill = "", title = protein) +
       theme_minimal() +
       theme(
@@ -416,13 +434,16 @@ server <- function(input, output) {
                                           colour = "black"), 
         axis.ticks = ggplot2::element_line(linewidth = 0.5, 
                                            colour = "black")) +
-      scale_fill_manual(values = c("Without p-value info" = "darkgrey",
+      scale_fill_manual(values = c("Without p-value info" = "pink",
+                                   # "Without p-value info" = "darkgrey",
                                    # "Significant (p-val)" = "darkgreen",
                                    "Significant (p-val)" = "lightskyblue",
                                    # "Significant (adjusted)" = "#4DAF4A",
                                    "Significant (adjusted)" = "royalblue4",
-                                   "Non significant (p-val)" = "darkred", 
-                                   "Non significant (adjusted)" = "pink" 
+                                   # "Non significant (p-val)" = "darkred", 
+                                   # "Non significant (adjusted)" = "pink" 
+                                   "Non significant (p-val)" = "lightgrey", 
+                                   "Non significant (adjusted)" = "#595959" 
       )) +
       ylim(c(-ylimInfo, ylimInfo))
     
