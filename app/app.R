@@ -57,9 +57,11 @@ ui <- bslib::page_fluid(
                       href="logo_biostatech.png")
   ),
   
- 
+
     ## Sidebar ####
   layout_sidebar(
+    div(textOutput(outputId = "textNoInfo"),
+        style = "color: darkred; font-weight: bold; font-size: 25px; text-align: center; margin-top: 10px; margin-bottom: 10px"),
     sidebar = sidebar(
       title = h3("Selection panel"), accept = ".txt",
       width = 350,
@@ -127,7 +129,11 @@ ui <- bslib::page_fluid(
                        ),
         selected = 1, multiple = F
       ),
-      actionButton(inputId = "goSearch", label = "Start search!")
+      actionButton(inputId = "goSearch", label = "Start search!"),
+      helpText("Use ", 
+               a("UniProtKB database", href = "https://www.uniprot.org/", 
+                 target="_blank"),
+               " to check your protein identifier or to find it.")
       ),
   
   
@@ -158,7 +164,7 @@ ui <- bslib::page_fluid(
   ),
   
   card(    
-    height = '1500px',
+    height = '1700px',
     card_header(h2("Protein search results")), 
     card_body(
       p("For each study, the corresponding log2 fold change (logFC) is shown in 
@@ -173,6 +179,12 @@ ui <- bslib::page_fluid(
         were retained. However, when only raw p-values were available, adjusted 
         p-values were computed using the Benjamini–Hochberg correction based on 
         the total number of comparisons (i.e., proteins) in the corresponding study. "),
+      p("For some articles, raw data had to be reanalyzed to obtain differential
+        abundance results for the target groups or to address issues such as 
+        missing fold-change or p-values for the full list of proteins. This may 
+        result in minor discrepancies between the original article data and the 
+        information provided in this app. Details about the reanalysis are available
+        in the panel above, under the Relevant Proteins table"),
       # helpText(textOutput("summaryText")),
       fillable = T, fill = T, 
       shinycustomloader::withLoader(uiOutput(outputId = "logFCPlot"), 
@@ -242,12 +254,23 @@ server <- function(input, output) {
   dfBasal <- eventReactive(input$goSearch, {
     df <- req(dfFilter())
     protein <- req(protein())
-    if(is.null(df)){
+    if(is.null(df) | nrow(df) == 0){
       return(NULL)
     }
     
     dfBasal <- searchDataBasal(df)
     return(dfBasal)
+  })
+  
+  output$textNoInfo <- renderText({
+    df <- req(dfFilter())
+    protein <- req(protein())
+    if(nrow(df) == 0){
+      return("No articles match the selected options.")
+    } else {
+      return("")
+    }
+    
   })
   
   
@@ -286,7 +309,7 @@ server <- function(input, output) {
     dfBasalImportant <- dfBasal %>% 
       dplyr::select(Reference, SampleSizeControls, SampleSizeDiabetics, 
                     TypeOfSample, TypeOfSample_2, InfoFC, infoPvalue, 
-                    infoAdjustedPvalue, RawData) %>%
+                    infoAdjustedPvalue, RawData, Reanalysis) %>%
       dplyr::rename(
         `Sample size control group` = SampleSizeControls,
         `Sample size T2DM group` = SampleSizeDiabetics,
@@ -295,12 +318,14 @@ server <- function(input, output) {
         `Fold change data?` = InfoFC,
         `P-value data?` = infoPvalue,
         `Adjusted p-value data?` = infoAdjustedPvalue, 
-        `Raw data?` = RawData
+        `Raw data?` = RawData,
+        `Reanalysis?` = Reanalysis
       )
     
     ## Display 
-    tab <- DT::datatable(dfBasalImportant, extensions = "Buttons", rownames = F, escape = F,
-                  options = list(ordering = F, dom = "Brft", scrollY = '500px',
+    tab <- DT::datatable(dfBasalImportant, extensions = "Buttons",  
+                         rownames = F, escape = F, filter = "top",
+                  options = list(ordering = T, dom = "Brft", scrollY = '500px',
                                  scrollX = T, pageLength = nrow(dfBasalImportant),
                                  full_width = TRUE, rowCallback = DT::JS(js),
                                  buttons = list(list(extend = "copy"),
@@ -322,8 +347,9 @@ server <- function(input, output) {
       dplyr::select(Reference, Country:DOI, Title:Authors)
     
     ## Display 
-    tab <- DT::datatable(dfBasalPaper, extensions = "Buttons", rownames = F, escape = F,
-                             options = list(ordering = F, dom = "Brft", scrollY = '500px',
+    tab <- DT::datatable(dfBasalPaper, extensions = "Buttons", 
+                         rownames = F, escape = F, filter = "top", 
+                             options = list(ordering = T, dom = "Brft", scrollY = '500px',
                                             scrollX = T, pageLength = nrow(dfBasalPaper),
                                             full_width = T, rowCallback = DT::JS(js),
                                             buttons = list(list(extend = "copy"),
@@ -360,8 +386,9 @@ server <- function(input, output) {
     
     ## Display 
     tab <- 
-      DT::datatable(dfBasalProteomics, extensions = "Buttons", rownames = F, escape = F,
-                    options = list(ordering = F, dom = "Brft", scrollY = '500px',
+      DT::datatable(dfBasalProteomics, extensions = "Buttons",
+                    rownames = F, escape = F, filter = "top", 
+                    options = list(ordering = T, dom = "Brft", scrollY = '500px',
                                    scrollX = T, pageLength = nrow(dfBasalProteomics),
                                    full_width = TRUE, rowCallback = DT::JS(js),
                                    buttons = list(list(extend = "copy"),
@@ -477,7 +504,7 @@ server <- function(input, output) {
     
     ## Display 
     tab <- DT::datatable(df, extensions = "Buttons", rownames = F, escape = F,
-                  options = list(ordering = F, dom = "Brft", scrollY = '500px',
+                  options = list(ordering = T, dom = "Brft", scrollY = '500px',
                                  scrollX = T, pageLength = nrow(df),
                                  full_width = TRUE, rowCallback = DT::JS(js),
                                  buttons = list(list(extend = "copy"),

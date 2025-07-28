@@ -19,6 +19,12 @@ basal$DOI <- paste0("https://doi.org/", basal$DOI)
 # )
 data <- readRDS(file = "completeDatabase.rds")
 data$ID <- gsub(x = data$ID, pattern = "_Pro", replacement = "")
+basal$Reanalysis <- ifelse(basal$RawData == "No", "No", "Yes")
+basal[which(basal$ID %in% c("16_128", "425_58", "511_252", "231_253", "446_99")), 
+      "Reanalysis"] <- "No"
+basal[which(basal$ID %in% c("284_268", "432_287")), 
+      "Reanalysis"] <- "Partially"
+basal$Reanalysis <- factor(basal$Reanalysis, levels = c("No", "Partially", "Yes"))
 
 # Global variables ####
 js <- c(
@@ -100,7 +106,7 @@ searchDataBasal <- function(df){
                   TypeOfSample_2, 
                   SoftwareDownstreamAnalysis:StatisticalTest, 
                   AdjustedMethodDic, AdjustedMethod:Tool_FuncitonalAnalysis, 
-                  infoPvalue:RawData
+                  infoPvalue:RawData, Reanalysis
     )
   dfBasal$DOI <- paste0(
     "<a href='", dfBasal$DOI, "' target='_blank'>", dfBasal$DOI,"</a>"
