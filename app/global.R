@@ -9,6 +9,7 @@ library(DT)
 library(plotly)
 library(Hmisc)
 library(ggplot2)
+library(bslib)
 
 
 # Loading data ####
@@ -119,7 +120,11 @@ searchDataBasal <- function(df){
 
 
 
-
+# Dependencies 
+# pkgs <- sessionInfo()$otherPkgs
+# dfDependencies <- data.frame(Package = names(pkgs), Version = sapply(pkgs, function(x) x$Version))
+# write.table(dfDependencies, file = "dependencies.txt", append = F, sep = "\t",
+#             row.names = F, quote = F, col.names = T)
 
 
 
