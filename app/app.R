@@ -69,8 +69,8 @@ ui <- bslib::page_fluid(
                 label = "Protein ID from UniProt", 
                 value = "P04004"), 
       uiOutput("summaryText"),
-      fileInput(inputId = "txtFile",
-                label = "Text file with the list of protein IDs from UniProt: "),
+      # fileInput(inputId = "txtFile",
+      #           label = "Text file with the list of protein IDs from UniProt: "),
       h4("Filters"),
       selectInput(
         "typeOfSample",
