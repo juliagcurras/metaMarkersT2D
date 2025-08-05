@@ -5,7 +5,7 @@ account: jgcurras
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14852818
-bundleId: 10686298
+bundleId: 10728898
 url: https://jgcurras.shinyapps.io/metaMarkersT2D/
 version: 1
 asMultiple: FALSE
